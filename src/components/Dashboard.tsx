@@ -13,7 +13,6 @@ import { FiltersSidebar } from '@/components/dashboard/FiltersSidebar';
 import { CategoryPerformanceChart } from '@/components/dashboard/CategoryPerformanceChart';
 import { PeakTimesHeatmap } from '@/components/dashboard/PeakTimesHeatmap';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
 
 const formatNumber = (num: number) => {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -52,14 +51,16 @@ export const Dashboard = () => {
         showFilters={showFilters}
       />
       
-      <main className="container py-6">
-        <div className="flex gap-6">
+      <main className="container py-8 lg:py-12">
+        <div className="flex gap-8">
           {/* Filters Sidebar - Desktop */}
           <aside className="hidden lg:block w-72 shrink-0">
-            <FiltersSidebar 
-              filters={filters}
-              onFiltersChange={updateFilters}
-            />
+            <div className="sticky top-24">
+              <FiltersSidebar 
+                filters={filters}
+                onFiltersChange={updateFilters}
+              />
+            </div>
           </aside>
           
           {/* Filters Sidebar - Mobile */}
@@ -74,41 +75,49 @@ export const Dashboard = () => {
           </Sheet>
           
           {/* Main Content */}
-          <div className="flex-1 space-y-6 min-w-0">
+          <div className="flex-1 space-y-8 min-w-0">
             {/* KPI Cards */}
-            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <KPICard
-                title="Total Page Views"
-                value={kpis ? formatNumber(kpis.totalViews) : '0'}
-                change={kpis?.viewsChange || 0}
-                icon="views"
-                isLoading={isLoading}
-              />
-              <KPICard
-                title="Avg. Time on Page"
-                value={kpis ? formatTime(kpis.avgTimeOnPage) : '0m 0s'}
-                change={kpis?.timeChange || 0}
-                icon="time"
-                isLoading={isLoading}
-              />
-              <KPICard
-                title="Engagement Rate"
-                value={kpis ? `${kpis.engagementRate.toFixed(1)}%` : '0%'}
-                change={kpis?.engagementChange || 0}
-                icon="engagement"
-                isLoading={isLoading}
-              />
-              <KPICard
-                title="Active Users"
-                value={kpis ? formatNumber(kpis.activeUsers) : '0'}
-                change={kpis?.usersChange || 0}
-                icon="users"
-                isLoading={isLoading}
-              />
+            <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="animate-fade-in" style={{ animationDelay: '0ms' }}>
+                <KPICard
+                  title="Total Page Views"
+                  value={kpis ? formatNumber(kpis.totalViews) : '0'}
+                  change={kpis?.viewsChange || 0}
+                  icon="views"
+                  isLoading={isLoading}
+                />
+              </div>
+              <div className="animate-fade-in" style={{ animationDelay: '50ms' }}>
+                <KPICard
+                  title="Avg. Time on Page"
+                  value={kpis ? formatTime(kpis.avgTimeOnPage) : '0m 0s'}
+                  change={kpis?.timeChange || 0}
+                  icon="time"
+                  isLoading={isLoading}
+                />
+              </div>
+              <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+                <KPICard
+                  title="Engagement Rate"
+                  value={kpis ? `${kpis.engagementRate.toFixed(1)}%` : '0%'}
+                  change={kpis?.engagementChange || 0}
+                  icon="engagement"
+                  isLoading={isLoading}
+                />
+              </div>
+              <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+                <KPICard
+                  title="Active Users"
+                  value={kpis ? formatNumber(kpis.activeUsers) : '0'}
+                  change={kpis?.usersChange || 0}
+                  icon="users"
+                  isLoading={isLoading}
+                />
+              </div>
             </section>
             
             {/* Charts Row 1 */}
-            <section className="grid gap-6 lg:grid-cols-3">
+            <section className="grid gap-6 lg:grid-cols-3 animate-fade-in" style={{ animationDelay: '200ms' }}>
               <EngagementChart 
                 data={timeSeriesData}
                 isLoading={isLoading}
@@ -120,7 +129,7 @@ export const Dashboard = () => {
             </section>
             
             {/* Top Articles Table */}
-            <section>
+            <section className="animate-fade-in" style={{ animationDelay: '250ms' }}>
               <TopArticlesTable 
                 articles={articles}
                 isLoading={isLoading}
@@ -128,7 +137,7 @@ export const Dashboard = () => {
             </section>
             
             {/* Charts Row 2 */}
-            <section className="grid gap-6 md:grid-cols-2">
+            <section className="grid gap-6 md:grid-cols-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
               <GeographicChart 
                 data={geographicData}
                 isLoading={isLoading}
@@ -140,7 +149,7 @@ export const Dashboard = () => {
             </section>
             
             {/* Charts Row 3 */}
-            <section className="grid gap-6 md:grid-cols-2">
+            <section className="grid gap-6 md:grid-cols-2 animate-fade-in" style={{ animationDelay: '350ms' }}>
               <CategoryPerformanceChart 
                 articles={allArticles}
                 isLoading={isLoading}
@@ -151,7 +160,7 @@ export const Dashboard = () => {
             </section>
             
             {/* Bottom Row */}
-            <section className="grid gap-6 lg:grid-cols-2">
+            <section className="grid gap-6 lg:grid-cols-2 animate-fade-in" style={{ animationDelay: '400ms' }}>
               <CohortRetentionTable 
                 cohorts={cohorts}
                 isLoading={isLoading}
@@ -166,7 +175,7 @@ export const Dashboard = () => {
       </main>
       
       {/* Footer */}
-      <footer className="border-t border-border py-6 mt-12">
+      <footer className="border-t border-border py-8 mt-16">
         <div className="container">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
