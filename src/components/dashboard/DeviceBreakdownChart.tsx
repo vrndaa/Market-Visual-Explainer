@@ -14,9 +14,12 @@ const COLORS = [
   '#f59e0b'  // Tablet - amber
 ];
 
-const deviceIcons = {
+const deviceIcons: Record<string, typeof Smartphone> = {
+  mobile: Smartphone,
   Mobile: Smartphone,
+  desktop: Monitor,
   Desktop: Monitor,
+  tablet: Tablet,
   Tablet: Tablet
 };
 
@@ -44,7 +47,7 @@ export const DeviceBreakdownChart = ({ data, isLoading }: DeviceBreakdownChartPr
       <CardContent>
         <div className="grid gap-4 mb-4">
           {data.map((item, index) => {
-            const Icon = deviceIcons[item.device as keyof typeof deviceIcons];
+            const Icon = deviceIcons[item.device] || Monitor;
             const percentage = ((item.count / total) * 100).toFixed(1);
             
             return (
