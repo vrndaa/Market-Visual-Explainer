@@ -11,7 +11,7 @@ interface EngagementChartProps {
 export const EngagementChart = ({ data, isLoading }: EngagementChartProps) => {
   if (isLoading) {
     return (
-      <Card className="col-span-2">
+      <Card className="h-full">
         <CardHeader>
           <CardTitle>Engagement Trends</CardTitle>
         </CardHeader>
@@ -28,15 +28,15 @@ export const EngagementChart = ({ data, isLoading }: EngagementChartProps) => {
   }));
 
   return (
-    <Card className="col-span-2">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2">
-          Engagement Trends
-          <span className="text-xs font-normal text-muted-foreground">Last 30 days</span>
-        </CardTitle>
+    <Card className="h-full">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle>Engagement Trends</CardTitle>
+          <span className="text-xs text-muted-foreground">Last 30 days</span>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-80">
+      <CardContent className="pt-0">
+        <div className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={formattedData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>

@@ -38,7 +38,7 @@ export const TrafficSourcesChart = ({ articles, isLoading }: TrafficSourcesChart
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="h-full">
         <CardHeader>
           <CardTitle>Traffic Sources</CardTitle>
         </CardHeader>
@@ -50,24 +50,26 @@ export const TrafficSourcesChart = ({ articles, isLoading }: TrafficSourcesChart
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="h-full">
+      <CardHeader className="pb-4">
         <CardTitle>Traffic Sources</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-80">
+      <CardContent className="pt-0">
+        <div className="h-[320px] flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
+                cy="45%"
+                innerRadius={70}
+                outerRadius={110}
                 paddingAngle={4}
                 dataKey="value"
                 stroke="hsl(var(--background))"
-                strokeWidth={2}
+                strokeWidth={3}
+                animationBegin={0}
+                animationDuration={800}
               >
                 {data.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -77,19 +79,21 @@ export const TrafficSourcesChart = ({ articles, isLoading }: TrafficSourcesChart
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: 'var(--radius)',
-                  boxShadow: 'var(--shadow-lg)'
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                  padding: '12px 16px'
                 }}
-                formatter={(value: number, name: string, props: any) => [
+                formatter={(value: number, name: string) => [
                   `${value}%`,
                   name
                 ]}
               />
               <Legend 
                 verticalAlign="bottom" 
-                height={36}
-                formatter={(value: string, entry: any) => (
-                  <span className="text-sm text-foreground">{value}</span>
+                height={50}
+                wrapperStyle={{ paddingTop: '20px' }}
+                formatter={(value: string) => (
+                  <span className="text-sm text-foreground ml-1">{value}</span>
                 )}
               />
             </PieChart>
