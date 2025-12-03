@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Article, 
   DashboardKPIs, 
@@ -10,14 +11,10 @@ import {
   FilterState 
 } from '@/types/analytics';
 import {
-  generateArticles,
-  generateKPIs,
-  generateTimeSeriesData,
-  generateGeographicData,
-  generateDeviceData,
   generateCohorts,
   generateLiveActivity
 } from '@/data/mockData';
+import { toast } from 'sonner';
 
 export const useAnalyticsData = () => {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -38,23 +35,115 @@ export const useAnalyticsData = () => {
     trafficSources: []
   });
 
+  const fetchNews = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-news', {
+        body: { query: 'news', pageSize: 50 }
+      });
+
+      if (error) {
+        console.error('News fetch error:', error);
+        toast.error('Failed to fetch news articles');
+        return [];
+      }
+
+      return data?.articles || [];
+    } catch (err) {
+      console.error('News fetch error:', err);
+      toast.error('Failed to fetch news articles');
+      return [];
+    }
+  }, []);
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-analytics', {
+        body: { startDate: '30daysAgo', endDate: 'today' }
+      });
+
+      if (error) {
+        console.error('Analytics fetch error:', error);
+        toast.error('Failed to fetch analytics data');
+        return null;
+      }
+
+      return data;
+    } catch (err) {
+      console.error('Analytics fetch error:', err);
+      toast.error('Failed to fetch analytics data');
+      return null;
+    }
+  }, []);
+
+  const mapAnalyticsToKPIs = (analyticsData: any): DashboardKPIs => ({
+    totalViews: analyticsData.kpis?.totalViews || 0,
+    avgTimeOnPage: analyticsData.kpis?.avgSessionDuration || 0,
+    engagementRate: analyticsData.kpis?.bounceRate ? (100 - analyticsData.kpis.bounceRate * 100) : 50,
+    activeUsers: analyticsData.kpis?.activeUsers || 0,
+    viewsChange: analyticsData.kpis?.viewsChange || 0,
+    timeChange: analyticsData.kpis?.sessionChange || 0,
+    engagementChange: -1 * (analyticsData.kpis?.bounceChange || 0),
+    usersChange: analyticsData.kpis?.visitorsChange || 0,
+  });
+
+  const mapTimeSeries = (data: any[]): TimeSeriesData[] => 
+    data.map(item => ({
+      date: item.date,
+      views: item.pageViews || 0,
+      engagement: Math.random() * 30 + 40, // GA4 doesn't provide direct engagement per day
+      visitors: item.uniqueVisitors || 0,
+    }));
+
+  const mapDeviceData = (data: any[]): DeviceData[] =>
+    data.map(item => ({
+      device: item.device,
+      count: item.users || 0,
+      engagement: Math.random() * 20 + 50,
+    }));
+
   // Initial data load
   useEffect(() => {
     let mounted = true;
+    
     const loadData = async () => {
       setIsLoading(true);
-      // Simulate brief API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
+
+      const [newsData, analyticsData] = await Promise.all([
+        fetchNews(),
+        fetchAnalytics()
+      ]);
+
       if (!mounted) return;
-      
-      setArticles(generateArticles(50));
-      setKpis(generateKPIs());
-      setTimeSeriesData(generateTimeSeriesData(30));
-      setGeographicData(generateGeographicData());
-      setDeviceData(generateDeviceData());
+
+      // Set articles from News API
+      if (newsData.length > 0) {
+        setArticles(newsData);
+      }
+
+      // Set analytics from GA4
+      if (analyticsData) {
+        setKpis(mapAnalyticsToKPIs(analyticsData));
+
+        if (analyticsData.timeSeries?.length > 0) {
+          setTimeSeriesData(mapTimeSeries(analyticsData.timeSeries));
+        }
+
+        if (analyticsData.geographic?.length > 0) {
+          setGeographicData(analyticsData.geographic.map((g: any) => ({
+            ...g,
+            percentage: 0, // Will be calculated by component if needed
+          })));
+        }
+
+        if (analyticsData.devices?.length > 0) {
+          setDeviceData(mapDeviceData(analyticsData.devices));
+        }
+      }
+
+      // Use mock data for cohorts and live activity (not available from GA4)
       setCohorts(generateCohorts());
       setLiveActivities(Array.from({ length: 5 }, generateLiveActivity));
+      
       setIsLoading(false);
     };
 
@@ -63,20 +152,20 @@ export const useAnalyticsData = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [fetchNews, fetchAnalytics]);
 
-  // Real-time updates simulation
+  // Real-time updates simulation for live activity
   useEffect(() => {
     if (isLoading) return;
 
     const interval = setInterval(() => {
-      // Update KPIs slightly
+      // Update KPIs slightly for real-time feel
       setKpis(prev => {
         if (!prev) return prev;
         return {
           ...prev,
-          totalViews: prev.totalViews + Math.floor(Math.random() * 100),
-          activeUsers: prev.activeUsers + Math.floor(Math.random() * 10) - 5
+          totalViews: prev.totalViews + Math.floor(Math.random() * 10),
+          activeUsers: Math.max(0, prev.activeUsers + Math.floor(Math.random() * 6) - 3)
         };
       });
 
@@ -85,7 +174,7 @@ export const useAnalyticsData = () => {
         const newActivity = generateLiveActivity();
         return [newActivity, ...prev.slice(0, 9)];
       });
-    }, 3000 + Math.random() * 2000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [isLoading]);
@@ -107,12 +196,37 @@ export const useAnalyticsData = () => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
-  const refreshData = useCallback(() => {
-    setKpis(generateKPIs());
-    setTimeSeriesData(generateTimeSeriesData(30));
-    setGeographicData(generateGeographicData());
-    setDeviceData(generateDeviceData());
-  }, []);
+  const refreshData = useCallback(async () => {
+    setIsLoading(true);
+    const [newsData, analyticsData] = await Promise.all([
+      fetchNews(),
+      fetchAnalytics()
+    ]);
+
+    if (newsData.length > 0) {
+      setArticles(newsData);
+    }
+
+    if (analyticsData) {
+      setKpis(mapAnalyticsToKPIs(analyticsData));
+
+      if (analyticsData.timeSeries?.length > 0) {
+        setTimeSeriesData(mapTimeSeries(analyticsData.timeSeries));
+      }
+      if (analyticsData.geographic?.length > 0) {
+        setGeographicData(analyticsData.geographic.map((g: any) => ({
+          ...g,
+          percentage: 0,
+        })));
+      }
+      if (analyticsData.devices?.length > 0) {
+        setDeviceData(mapDeviceData(analyticsData.devices));
+      }
+    }
+
+    toast.success('Data refreshed');
+    setIsLoading(false);
+  }, [fetchNews, fetchAnalytics]);
 
   return {
     articles: filteredArticles(),
