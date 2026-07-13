@@ -80,6 +80,7 @@ export const Dashboard = () => {
     cohorts,
     liveActivities,
     isLoading,
+    isDemoData,
     filters,
     updateFilters,
     refreshData
@@ -349,10 +350,11 @@ export const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader 
+      <DashboardHeader
         onRefresh={refreshData}
         onToggleFilters={() => setShowFilters(!showFilters)}
         showFilters={showFilters}
+        isDemoData={isDemoData}
       />
       
       {/* Navigation Tabs */}
@@ -441,10 +443,10 @@ export const Dashboard = () => {
         <div className="container">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              Content Analytics Dashboard • Real-time performance tracking
+              Market Visual Explainer • Content performance dashboard
             </p>
             <p className="text-xs text-muted-foreground">
-              Data refreshes automatically every 3-5 seconds
+              {isDemoData ? 'Showing sample data · simulated live updates' : 'Live data · refreshes on demand'}
             </p>
           </div>
         </div>

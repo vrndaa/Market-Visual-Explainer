@@ -1,7 +1,11 @@
 project_id = "ohhkddqqpnpzykfoqdqi"
 
+# verify_jwt = true requires callers to present a valid Supabase JWT (the app
+# sends the anon key automatically via supabase.functions.invoke). This blocks
+# unauthenticated direct calls; combined with the CORS allow-list and rate
+# limiter in _shared/security.ts it prevents drive-by abuse of the upstream APIs.
 [functions.fetch-news]
-verify_jwt = false
+verify_jwt = true
 
 [functions.fetch-analytics]
-verify_jwt = false
+verify_jwt = true

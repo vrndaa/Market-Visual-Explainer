@@ -1,10 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders, isRateLimited } from "../_shared/security.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Shape of a single row from the GA4 Analytics Data API runReport response.
+interface GA4Row {
+  dimensionValues: { value: string }[];
+  metricValues: { value: string }[];
+}
 
 // Mock data generators for fallback
 const randomBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -65,8 +67,16 @@ const generateMockDeviceData = () => {
 };
 
 serve(async (req) => {
+  const cors = corsHeaders(req);
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: cors });
+  }
+
+  if (isRateLimited(req)) {
+    return new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -84,7 +94,7 @@ serve(async (req) => {
         devices: generateMockDeviceData(),
         isMockData: true,
       }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors, 'Content-Type': 'application/json' },
       });
     }
 
@@ -102,7 +112,7 @@ serve(async (req) => {
         devices: generateMockDeviceData(),
         isMockData: true,
       }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors, 'Content-Type': 'application/json' },
       });
     }
     
@@ -124,7 +134,7 @@ serve(async (req) => {
       geographic: geoData,
       devices: deviceData,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
     console.error('Error in fetch-analytics function:', error);
@@ -136,7 +146,7 @@ serve(async (req) => {
       devices: generateMockDeviceData(),
       isMockData: true,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     });
   }
 });
@@ -278,7 +288,7 @@ async function fetchTimeSeries(accessToken: string, propertyId: string, startDat
   }
 
   const data = await response.json();
-  return (data.rows || []).map((row: any) => ({
+  return (data.rows || []).map((row: GA4Row) => ({
     date: row.dimensionValues[0].value,
     pageViews: parseInt(row.metricValues[0].value),
     uniqueVisitors: parseInt(row.metricValues[1].value),
@@ -310,7 +320,7 @@ async function fetchGeographicData(accessToken: string, propertyId: string, star
   }
 
   const data = await response.json();
-  return (data.rows || []).map((row: any) => ({
+  return (data.rows || []).map((row: GA4Row) => ({
     country: row.dimensionValues[0].value,
     visitors: parseInt(row.metricValues[0].value),
   }));
@@ -338,9 +348,9 @@ async function fetchDeviceData(accessToken: string, propertyId: string, startDat
   }
 
   const data = await response.json();
-  const total = (data.rows || []).reduce((sum: number, row: any) => sum + parseInt(row.metricValues[0].value), 0);
+  const total = (data.rows || []).reduce((sum: number, row: GA4Row) => sum + parseInt(row.metricValues[0].value), 0);
   
-  return (data.rows || []).map((row: any) => ({
+  return (data.rows || []).map((row: GA4Row) => ({
     device: row.dimensionValues[0].value,
     users: parseInt(row.metricValues[0].value),
     sessions: parseInt(row.metricValues[1].value),

@@ -15,4 +15,17 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split heavy libraries into their own cacheable chunks so the initial
+        // bundle isn't one 1MB+ file.
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-charts": ["recharts"],
+          "vendor-motion": ["framer-motion"],
+        },
+      },
+    },
+  },
 }));

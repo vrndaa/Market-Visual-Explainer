@@ -7,9 +7,10 @@ interface DashboardHeaderProps {
   onRefresh: () => void;
   onToggleFilters: () => void;
   showFilters: boolean;
+  isDemoData?: boolean;
 }
 
-export const DashboardHeader = ({ onRefresh, onToggleFilters, showFilters }: DashboardHeaderProps) => {
+export const DashboardHeader = ({ onRefresh, onToggleFilters, showFilters, isDemoData = true }: DashboardHeaderProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isDark, setIsDark] = useState(false);
@@ -56,18 +57,33 @@ export const DashboardHeader = ({ onRefresh, onToggleFilters, showFilters }: Das
               </h1>
             </div>
             <p className="text-sm text-muted-foreground ml-14">
-              Real-time content performance and audience insights
+              {isDemoData
+                ? 'Content performance dashboard — showing sample data'
+                : 'Real-time content performance and audience insights'}
             </p>
           </div>
           
           <div className="flex items-center gap-3 flex-wrap">
-            <Badge variant="outline" className="text-xs py-1.5 px-3 bg-card/50 backdrop-blur-sm border-border/50">
-              <span className="relative flex h-2 w-2 mr-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              Live
-            </Badge>
+            {isDemoData ? (
+              <Badge
+                variant="outline"
+                className="text-xs py-1.5 px-3 bg-amber-500/10 backdrop-blur-sm border-amber-500/40 text-amber-600 dark:text-amber-400"
+                title="Metrics are generated sample data. Configure GA4 / NewsAPI credentials to show live data."
+              >
+                <span className="relative flex h-2 w-2 mr-2">
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                Sample data
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-xs py-1.5 px-3 bg-card/50 backdrop-blur-sm border-border/50">
+                <span className="relative flex h-2 w-2 mr-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Live
+              </Badge>
+            )}
             
             <span className="text-xs text-muted-foreground hidden sm:inline px-2">
               Updated {formatTime(lastUpdated)}

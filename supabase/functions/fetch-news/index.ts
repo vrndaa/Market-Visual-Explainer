@@ -1,14 +1,18 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, isRateLimited } from "../_shared/security.ts";
 
 serve(async (req) => {
+  const cors = corsHeaders(req);
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: cors });
+  }
+
+  if (isRateLimited(req)) {
+    return new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -40,14 +44,16 @@ serve(async (req) => {
     console.log(`Fetched ${data.articles?.length || 0} articles`);
 
     // Transform articles to match our Article type
-    const articles = (data.articles || []).map((article: any, index: number) => ({
+    const articles = (data.articles || []).map((article: NewsApiArticle, index: number) => ({
       id: `news-${index}-${Date.now()}`,
       title: article.title || 'Untitled',
       author: article.author || 'Unknown Author',
-      category: categorizeArticle(article.title, article.description),
+      category: categorizeArticle(article.title ?? '', article.description ?? ''),
       publishDate: article.publishedAt || new Date().toISOString(),
       url: article.url,
-      thumbnail: article.urlToImage || 'https://via.placeholder.com/300x200',
+      thumbnail: article.urlToImage || '/placeholder.svg',
+      // NOTE: NewsAPI does not expose engagement analytics, so these per-article
+      // metrics are illustrative sample values (see README → "Data & honesty").
       metrics: {
         pageViews: Math.floor(Math.random() * 50000) + 1000,
         uniqueVisitors: Math.floor(Math.random() * 30000) + 500,
@@ -67,17 +73,26 @@ serve(async (req) => {
     }));
 
     return new Response(JSON.stringify({ articles, totalResults: data.totalResults }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
     console.error('Error in fetch-news function:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     });
   }
 });
+
+interface NewsApiArticle {
+  title?: string;
+  author?: string;
+  description?: string;
+  publishedAt?: string;
+  url?: string;
+  urlToImage?: string;
+}
 
 function categorizeArticle(title: string, description: string): string {
   const text = `${title} ${description}`.toLowerCase();
